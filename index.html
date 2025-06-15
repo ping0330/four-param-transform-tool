@@ -51,10 +51,10 @@
             @apply bg-slate-100 p-2 rounded-md font-semibold text-blue-700;
         }
         .tab-button {
-            @apply px-4 py-2 rounded-t-lg font-semibold text-slate-700 bg-slate-200 hover:bg-slate-300 transition duration-150;
+            @apply px-4 py-2 rounded-t-lg font-semibold bg-slate-300 text-slate-800 hover:bg-slate-400 transition duration-150 shadow-sm; /* Enhanced styling */
         }
         .tab-button.active {
-            @apply bg-white text-emerald-700 shadow-md;
+            @apply bg-emerald-600 text-white shadow-md; /* Active state is now emerald */
         }
         .tab-content {
             @apply bg-white p-6 md:p-8 rounded-b-xl rounded-tr-xl shadow-xl;
@@ -535,6 +535,8 @@ TP3,18.0,12.0"></textarea>
                 let chatHistory = [];
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
                 const payload = { contents: chatHistory };
+                // Using an empty API key allows Canvas to inject the key automatically at runtime.
+                // This is the intended way to use Gemini API within Canvas.
                 const apiKey = ""; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
@@ -544,8 +546,18 @@ TP3,18.0,12.0"></textarea>
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
+                    
+                    // Check if response is OK before trying to parse JSON
+                    if (!response.ok) {
+                        const errorBody = await response.text();
+                        throw new Error(`HTTP 錯誤! 狀態碼: ${response.status}. 錯誤內容: ${errorBody}`);
+                    }
+
                     const result = await response.json();
                     
+                    // Log the full result for debugging purposes
+                    console.log('Gemini API Response:', result); 
+
                     if (result.candidates && result.candidates.length > 0 &&
                         result.candidates[0].content && result.candidates[0].content.parts &&
                         result.candidates[0].content.parts.length > 0) {
@@ -553,7 +565,7 @@ TP3,18.0,12.0"></textarea>
                         interpretationText.textContent = text;
                         interpretationResult.classList.remove('hidden');
                     } else {
-                        interpretationError.textContent = "AI 解讀失敗，無法獲取有效回應。";
+                        interpretationError.textContent = "AI 解讀失敗，無法獲取有效回應。回應結構異常。";
                         interpretationError.classList.remove('hidden');
                         console.error('Gemini API returned an unexpected structure:', result);
                     }
