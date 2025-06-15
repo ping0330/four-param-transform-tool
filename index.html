@@ -528,8 +528,12 @@ TP3,18.0,12.0"></textarea>
                 const { a, b, te, tn } = params;
                 // Standard 2D similarity transform:
                 // X' = aX - bY + Tx
-                // Y' = bX + aY + Ty
+                // Y' = bY + aX + Ty
                 // Here, X is E (Easting) and Y is N (Northing)
+                // The parameters 'a' and 'b' are related to scale and rotation:
+                // a = s * cos(theta)
+                // b = s * sin(theta)
+                // where 's' is scale, 'theta' is rotation angle
                 const ePrime = a * e - b * n + te; // E' = a*E - b*N + TE
                 const nPrime = b * e + a * n + tn; // N' = b*E + a*N + TN
                 return { n: nPrime, e: ePrime }; // Returns N', E'
@@ -549,13 +553,16 @@ TP3,18.0,12.0"></textarea>
 
                 const { scale, rotationDegrees, te, tn } = globalCalculatedParams;
 
-                const prompt = `您好，我剛剛執行了四參數轉換計算，得到了以下參數：
+                // Construct a more robust prompt with context for the LLM
+                const prompt = `我正在執行地理測量中的「四參數相似轉換」。請根據以下計算結果，以專業、簡潔且易於理解的語言，對這些參數在空間座標轉換中的實際意義和影響進行解讀。特別說明縮放、旋轉和平移的具體作用，並評估整體轉換的特性（例如，是放大還是縮小？旋轉方向是順時針或逆時針？主要的平移方向是向北/南/東/西？）。請注意，座標中的 N 代表北向，E 代表東向。
+
+計算出的四參數如下：
 - 縮放比例 (s): ${scale.toFixed(6)}
 - 旋轉角度 (度): ${rotationDegrees.toFixed(6)}
 - 東向平移 (TE): ${te.toFixed(6)}
 - 北向平移 (TN): ${tn.toFixed(6)}
 
-請以地理測量專業人員能夠理解的簡潔語言，解釋這些參數在座標轉換中的意義，並說明這個轉換的整體特徵（例如，是放大還是縮小？旋轉方向？主要的平移方向？）。請注意，N代表北向，E代表東向。`; // Added N/E context for AI
+請直接給出解讀內容，無需額外開場白或結語。`;
 
                 let chatHistory = [];
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
@@ -588,7 +595,7 @@ TP3,18.0,12.0"></textarea>
                     } else {
                         interpretationError.textContent = "AI 解讀失敗，無法獲取有效回應。回應結構異常。";
                         interpretationError.classList.remove('hidden');
-                        console.error('Gemini API returned an unexpected structure:', result);
+                        console.error('Gemini API returned an unexpected structure or no content:', result);
                     }
                 } catch (error) {
                     interpretationError.textContent = `AI 解讀失敗：${error.message}。請檢查網路連線或 API 狀態。`;
