@@ -10,15 +10,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Fresh Serenity (Soft blues and greens with neutral grays for text, a calming and clear aesthetic. Background slate-50, primary text slate-700, accents emerald-600/blue-600.) -->
-    <!-- Application Structure Plan: The SPA is structured into three main interactive sections: "控制點數據與參數計算" (now with dynamic, individual input fields for each coordinate, enhancing user experience and including AI interpretation), "待轉換點數據與應用" (where users paste points to transform and apply the calculated parameters), and "轉換視覺化" (displaying all original and transformed points). This modular approach prioritizes a clear workflow for the user: define transformation first, then apply it, and finally visualize the overall effect. The layout uses Tailwind's flexbox and grid for responsiveness, ensuring optimal usability across devices. -->
+    <!-- Application Structure Plan: The SPA is structured into three main interactive sections: "控制點數據與參數計算" (now with dynamic, individual input fields for each coordinate, enhancing user experience), "待轉換點數據與應用" (where users paste points to transform and apply the calculated parameters), and "轉換視覺化" (displaying all original and transformed points). This modular approach prioritizes a clear workflow for the user: define transformation first, then apply it, and finally visualize the overall effect. The layout uses Tailwind's flexbox and grid for responsiveness, ensuring optimal usability across devices. -->
     <!-- Visualization & Content Choices:
         - Control Point Data Input (Dynamic Fields): Report Info -> Control Points (ID, Original N, E, Target N, E). Goal -> Input/Clarity/Ease of Use. Viz -> Dynamic HTML rows with individual input fields, allowing users to add/remove points, with N/E labels. This directly addresses the user's feedback for separated fields and single ID entry and N/E coordinate system, with N before E.
         - Parameter Calculation Results: Report Info -> Calculated Scale, Rotation, TE, TN. Goal -> Inform/Output. Viz -> Dedicated display fields for each parameter, with TE/TN labels.
-        - AI Parameter Interpretation: Report Info -> Calculated parameters. Goal -> Explain/Synthesize. Viz -> A button that triggers a Gemini API call to generate a textual interpretation of the calculated transformation parameters. This provides a clear, AI-powered explanation of complex results.
         - Points to Transform Data Input: Report Info -> Points to Transform (ID, N, E). Goal -> Input. Viz -> Textarea for pasting CSV-like data, with N/E labels.
         - Transformed Points Output: Report Info -> Transformed N', E'. Goal -> Inform/Output. Viz -> A dynamically generated table to list all transformed points for easy review, with N/E labels.
         - Combined Scatter Plot: Report Info -> All original and transformed points. Goal -> Compare/Visualize Change/Synthesize. Viz -> Chart.js scatter plot on a Canvas. Interaction -> Automatic update on parameter calculation and transformation application; hover for tooltips. This comprehensive visualization allows users to see the effect of the transformation on both the control points that defined it and the new points being transformed.
-        - Justification -> Dynamic input fields for control points significantly improve user experience by removing the need for CSV formatting. The AI interpretation adds a "wow" factor by making the complex results immediately understandable. Textareas are retained for bulk input of points to transform. Dynamic display offers immediate feedback. The unified scatter plot is crucial for understanding the geometric impact of the transformation, now with N/E axis labels for domain alignment. -->
+        - Justification -> Dynamic input fields for control points significantly improve user experience by removing the need for CSV formatting. Textareas are retained for bulk input of points to transform. Dynamic display offers immediate feedback. The unified scatter plot is crucial for understanding the geometric impact of the transformation, now with N/E axis labels for domain alignment. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
@@ -68,19 +67,6 @@
             color: white;
             border-bottom-color: #059669; /* Active tab's border color matches its background */
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        }
-        /* Spinner */
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #3b82f6; /* blue-500 */
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -141,20 +127,6 @@
                     <div><label class="block text-slate-700 font-medium">北向平移 (TN):</label><span id="paramTyDisplay" class="param-display">--</span></div>
                 </div>
                 <p id="paramCalcError" class="text-red-600 mt-4 hidden">錯誤：無法計算參數。請檢查數據格式、點位ID是否匹配或點位是否不足/重疊。</p>
-
-                <button id="interpretParamsBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-200 ease-in-out transform hover:scale-105 mt-6 w-full">
-                    ✨ 解讀轉換參數 ✨
-                </button>
-                <div id="interpretationLoading" class="flex justify-center items-center mt-4 hidden">
-                    <div class="spinner"></div>
-                    <span class="ml-2 text-slate-600">AI 正在生成解讀...</span>
-                </div>
-                <div id="interpretationResult" class="bg-blue-50 p-4 rounded-lg mt-4 hidden">
-                    <h3 class="font-semibold text-blue-800 mb-2">AI 智慧解讀：</h3>
-                    <p id="interpretationText" class="text-slate-700 leading-relaxed"></p>
-                    <p id="interpretationError" class="text-red-600 mt-2 hidden">AI 解讀失敗，請稍後再試。</p>
-                </div>
-
             </section>
 
             <!-- 點位轉換 Tab -->
@@ -205,18 +177,19 @@ TP3,18.0,12.0"></textarea>
             const controlPointsTableBody = document.getElementById('controlPointsTableBody');
             const addControlPointBtn = document.getElementById('addControlPointBtn');
             const clearControlPointsBtn = document.getElementById('clearControlPointsBtn');
-            const calculateParamsBtn = document.getElementById('calculateParamsBtn');
+            const calculateParamsBtn = document.getElementById('calculateParamsBtn'); // Corrected ID reference
             const paramScaleDisplay = document.getElementById('paramScaleDisplay');
             const paramRotationDisplay = document.getElementById('paramRotationDisplay');
             const paramTxDisplay = document.getElementById('paramTxDisplay'); // Now TE
             const paramTyDisplay = document.getElementById('paramTyDisplay'); // Now TN
             const paramCalcError = document.getElementById('paramCalcError');
 
-            const interpretParamsBtn = document.getElementById('interpretParamsBtn');
-            const interpretationLoading = document.getElementById('interpretationLoading');
-            const interpretationResult = document.getElementById('interpretationResult');
-            const interpretationText = document.getElementById('interpretationText');
-            const interpretationError = document.getElementById('interpretationError');
+            // Removed AI interpretation related elements and event listener
+            // const interpretParamsBtn = document.getElementById('interpretParamsBtn');
+            // const interpretationLoading = document.getElementById('interpretationLoading');
+            // const interpretationResult = document.getElementById('interpretationResult');
+            // const interpretationText = document.getElementById('interpretationText');
+            // const interpretationError = document.getElementById('interpretationError');
 
             const pointsToTransformInput = document.getElementById('pointsToTransformInput');
             const applyTransformBtn = document.getElementById('applyTransformBtn');
@@ -457,21 +430,6 @@ TP3,18.0,12.0"></textarea>
                 globalControlPoints.forEach(p => {
                     // E' = a*E - b*N + TE
                     // N' = b*E + a*N + TN
-                    // In the mathematical model (standard 2D similarity transform),
-                    // the input coordinates are typically (X, Y) and output (X', Y').
-                    // If we map (E, N) to (X, Y) for input, then:
-                    // X = E, Y = N
-                    // X' = E', Y' = N'
-                    // So, E' = a*E - b*N + TE
-                    // N' = b*E + a*N + TN
-                    // The matrix for coefficients is:
-                    // [ E  -N  1  0 ] [a]   [E']
-                    // [ N   E  0  1 ] [b] = [N']
-                    // Where our P vector is [a, b, TE, TN]
-                    // This means for the rows:
-                    // First row for E': coefficients for 'a' is E, for 'b' is -N, for 'TE' is 1, for 'TN' is 0
-                    // Second row for N': coefficients for 'a' is N, for 'b' is E, for 'TE' is 0, for 'TN' is 1
-
                     A_data.push([p.oldE, -p.oldN, 1, 0]); // Coefficients for E' = a*E - b*N + TE
                     L_data.push([p.newE]);
                     A_data.push([p.oldN, p.oldE, 0, 1]); // Coefficients for N' = b*E + a*N + TN
@@ -526,85 +484,13 @@ TP3,18.0,12.0"></textarea>
             function transformPoint(n, e, params) { // Accepts N, E
                 if (!params) return null;
                 const { a, b, te, tn } = params;
-                // Standard 2D similarity transform:
-                // X' = aX - bY + Tx
-                // Y' = bY + aX + Ty
-                // Here, X is E (Easting) and Y is N (Northing)
-                // The parameters 'a' and 'b' are related to scale and rotation:
-                // a = s * cos(theta)
-                // b = s * sin(theta)
-                // where 's' is scale, 'theta' is rotation angle
                 const ePrime = a * e - b * n + te; // E' = a*E - b*N + TE
                 const nPrime = b * e + a * n + tn; // N' = b*E + a*N + TN
                 return { n: nPrime, e: ePrime }; // Returns N', E'
             }
 
-            async function interpretParameters() {
-                if (!globalCalculatedParams) {
-                    interpretationText.textContent = "請先計算轉換參數。";
-                    interpretationResult.classList.remove('hidden');
-                    interpretationError.classList.add('hidden');
-                    return;
-                }
-
-                interpretationLoading.classList.remove('hidden');
-                interpretationResult.classList.add('hidden');
-                interpretationError.classList.add('hidden');
-
-                const { scale, rotationDegrees, te, tn } = globalCalculatedParams;
-
-                // Construct a more robust prompt with context for the LLM
-                const prompt = `我正在執行地理測量中的「四參數相似轉換」。請根據以下計算結果，以專業、簡潔且易於理解的語言，對這些參數在空間座標轉換中的實際意義和影響進行解讀。特別說明縮放、旋轉和平移的具體作用，並評估整體轉換的特性（例如，是放大還是縮小？旋轉方向是順時針或逆時針？主要的平移方向是向北/南/東/西？）。請注意，座標中的 N 代表北向，E 代表東向。
-
-計算出的四參數如下：
-- 縮放比例 (s): ${scale.toFixed(6)}
-- 旋轉角度 (度): ${rotationDegrees.toFixed(6)}
-- 東向平移 (TE): ${te.toFixed(6)}
-- 北向平移 (TN): ${tn.toFixed(6)}
-
-請直接給出解讀內容，無需額外開場白或結語。`;
-
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = { contents: chatHistory };
-                const apiKey = ""; 
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    if (!response.ok) {
-                        const errorBody = await response.text();
-                        throw new Error(`HTTP 錯誤! 狀態碼: ${response.status}. 錯誤內容: ${errorBody}`);
-                    }
-
-                    const result = await response.json();
-                    
-                    console.log('Gemini API Response:', result); 
-
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        const text = result.candidates[0].content.parts[0].text;
-                        interpretationText.innerHTML = text.replace(/\n/g, '<br>'); // Replace newlines with <br> for proper display
-                        interpretationResult.classList.remove('hidden');
-                    } else {
-                        interpretationError.textContent = "AI 解讀失敗，無法獲取有效回應。回應結構異常。";
-                        interpretationError.classList.remove('hidden');
-                        console.error('Gemini API returned an unexpected structure or no content:', result);
-                    }
-                } catch (error) {
-                    interpretationError.textContent = `AI 解讀失敗：${error.message}。請檢查網路連線或 API 狀態。`;
-                    interpretationError.classList.remove('hidden');
-                    console.error('Error calling Gemini API:', error);
-                } finally {
-                    interpretationLoading.classList.add('hidden');
-                }
-            }
+            // Removed AI interpretation function
+            // async function interpretParameters() { ... }
 
 
             function applyTransformationToPoints() {
@@ -726,7 +612,8 @@ TP3,18.0,12.0"></textarea>
                                         let pointId = '';
                                         if ((context.dataset.label === '原始控制點' || context.dataset.label === '轉換後控制點') && globalControlPoints[index]) {
                                             pointId = `ID: ${globalControlPoints[index].id}`;
-                                        } else if ((context.dataset.label === '原始待轉換點' || context.dataset.label === '轉換後待轉換點') && globalPointsToTransform[index]) {
+                                        }
+                                        else if ((context.dataset.label === '原始待轉換點' || context.dataset.label === '轉換後待轉換點') && globalPointsToTransform[index]) {
                                             pointId = `ID: ${globalPointsToTransform[index].id}`;
                                         }
                                         return [label, pointId].filter(Boolean);
@@ -784,7 +671,7 @@ TP3,18.0,12.0"></textarea>
             // Initial setup
             populateInitialControlPoints(); // Add some initial rows with example data
             calculateParamsBtn.addEventListener('click', calculateFourParameters);
-            interpretParamsBtn.addEventListener('click', interpretParameters); // New event listener for AI interpretation
+            // Removed AI interpretation event listener: interpretParamsBtn.addEventListener('click', interpretParameters);
             applyTransformBtn.addEventListener('click', applyTransformationToPoints);
 
             initializeChart();
