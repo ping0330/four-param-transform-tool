@@ -51,13 +51,23 @@
             @apply bg-slate-100 p-2 rounded-md font-semibold text-blue-700;
         }
         .tab-button {
-            @apply px-4 py-2 rounded-t-lg font-semibold bg-slate-300 text-slate-800 hover:bg-slate-400 transition duration-150 shadow-sm; /* Enhanced styling */
+            /* General styling for all tabs */
+            @apply px-6 py-3 rounded-t-xl font-bold text-lg transition duration-200 ease-in-out;
+            border-bottom: 3px solid transparent; /* Subtle bottom border for inactive */
+            color: #475569; /* slate-700 for better contrast on lighter background */
+            background-color: #f1f5f9; /* slate-100, lighter for better contrast */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* subtle shadow for separation */
+        }
+        .tab-button:hover {
+            background-color: #e2e8f0; /* slate-200 */
+            color: #1e293b; /* slate-900 */
         }
         .tab-button.active {
-            @apply bg-emerald-600 text-white shadow-md; /* Active state is now emerald */
-        }
-        .tab-content {
-            @apply bg-white p-6 md:p-8 rounded-b-xl rounded-tr-xl shadow-xl;
+            /* Active tab specific styling */
+            background-color: #059669; /* emerald-600 */
+            color: white;
+            border-bottom-color: #059669; /* Active tab's border color matches its background */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         /* Spinner */
         .spinner {
@@ -82,7 +92,7 @@
             <p class="text-lg text-slate-600">利用已知點計算相似變換參數並應用於待轉換點</p>
         </header>
 
-        <nav class="flex mb-4">
+        <nav class="flex justify-center gap-x-8 mb-4">
             <button class="tab-button active" data-tab="calc-params">參數計算</button>
             <button class="tab-button" data-tab="apply-transform">點位轉換</button>
             <button class="tab-button" data-tab="visualization">結果視覺化</button>
@@ -447,12 +457,24 @@ TP3,18.0,12.0"></textarea>
                 globalControlPoints.forEach(p => {
                     // E' = a*E - b*N + TE
                     // N' = b*E + a*N + TN
-                    // Note: In the mathematical model, E is treated as X and N as Y.
-                    // The 'a' and 'b' parameters are derived from (E, N) -> (E', N').
-                    // For the matrix formulation, we need to map N to the Y component and E to the X component.
-                    A_data.push([p.oldE, -p.oldN, 1, 0]); // Row for E' (Corresponds to X')
+                    // In the mathematical model (standard 2D similarity transform),
+                    // the input coordinates are typically (X, Y) and output (X', Y').
+                    // If we map (E, N) to (X, Y) for input, then:
+                    // X = E, Y = N
+                    // X' = E', Y' = N'
+                    // So, E' = a*E - b*N + TE
+                    // N' = b*E + a*N + TN
+                    // The matrix for coefficients is:
+                    // [ E  -N  1  0 ] [a]   [E']
+                    // [ N   E  0  1 ] [b] = [N']
+                    // Where our P vector is [a, b, TE, TN]
+                    // This means for the rows:
+                    // First row for E': coefficients for 'a' is E, for 'b' is -N, for 'TE' is 1, for 'TN' is 0
+                    // Second row for N': coefficients for 'a' is N, for 'b' is E, for 'TE' is 0, for 'TN' is 1
+
+                    A_data.push([p.oldE, -p.oldN, 1, 0]); // Coefficients for E' = a*E - b*N + TE
                     L_data.push([p.newE]);
-                    A_data.push([p.oldN, p.oldE, 0, 1]); // Row for N' (Corresponds to Y')
+                    A_data.push([p.oldN, p.oldE, 0, 1]); // Coefficients for N' = b*E + a*N + TN
                     L_data.push([p.newN]);
                 });
 
@@ -500,11 +522,14 @@ TP3,18.0,12.0"></textarea>
                 }
             }
 
-            // Transformed function now accepts N, E but internally uses them as Y, X for calculation
+            // Transformed function now accepts N, E but internally uses them for calculation based on standard similarity transform
             function transformPoint(n, e, params) { // Accepts N, E
                 if (!params) return null;
                 const { a, b, te, tn } = params;
-                // For calculation: E is X, N is Y
+                // Standard 2D similarity transform:
+                // X' = aX - bY + Tx
+                // Y' = bX + aY + Ty
+                // Here, X is E (Easting) and Y is N (Northing)
                 const ePrime = a * e - b * n + te; // E' = a*E - b*N + TE
                 const nPrime = b * e + a * n + tn; // N' = b*E + a*N + TN
                 return { n: nPrime, e: ePrime }; // Returns N', E'
@@ -530,13 +555,11 @@ TP3,18.0,12.0"></textarea>
 - 東向平移 (TE): ${te.toFixed(6)}
 - 北向平移 (TN): ${tn.toFixed(6)}
 
-請以地理測量專業人員能夠理解的簡潔語言，解釋這些參數在座標轉換中的意義，並說明這個轉換的整體特徵（例如，是放大還是縮小？旋轉方向？主要的平移方向？）。`;
+請以地理測量專業人員能夠理解的簡潔語言，解釋這些參數在座標轉換中的意義，並說明這個轉換的整體特徵（例如，是放大還是縮小？旋轉方向？主要的平移方向？）。請注意，N代表北向，E代表東向。`; // Added N/E context for AI
 
                 let chatHistory = [];
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
                 const payload = { contents: chatHistory };
-                // Using an empty API key allows Canvas to inject the key automatically at runtime.
-                // This is the intended way to use Gemini API within Canvas.
                 const apiKey = ""; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
@@ -547,7 +570,6 @@ TP3,18.0,12.0"></textarea>
                         body: JSON.stringify(payload)
                     });
                     
-                    // Check if response is OK before trying to parse JSON
                     if (!response.ok) {
                         const errorBody = await response.text();
                         throw new Error(`HTTP 錯誤! 狀態碼: ${response.status}. 錯誤內容: ${errorBody}`);
@@ -555,14 +577,13 @@ TP3,18.0,12.0"></textarea>
 
                     const result = await response.json();
                     
-                    // Log the full result for debugging purposes
                     console.log('Gemini API Response:', result); 
 
                     if (result.candidates && result.candidates.length > 0 &&
                         result.candidates[0].content && result.candidates[0].content.parts &&
                         result.candidates[0].content.parts.length > 0) {
                         const text = result.candidates[0].content.parts[0].text;
-                        interpretationText.textContent = text;
+                        interpretationText.innerHTML = text.replace(/\n/g, '<br>'); // Replace newlines with <br> for proper display
                         interpretationResult.classList.remove('hidden');
                     } else {
                         interpretationError.textContent = "AI 解讀失敗，無法獲取有效回應。回應結構異常。";
