@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>四參數轉換工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Fresh Serenity (Soft blues and greens with neutral grays for text, a calming and clear aesthetic. Background slate-50, primary text slate-700, accents emerald-600/blue-600.) -->
+    <!-- Application Structure Plan: The SPA is structured into three main interactive sections: "控制點數據與參數計算" (now with dynamic, individual input fields for each coordinate, enhancing user experience and including AI interpretation), "待轉換點數據與應用" (where users paste points to transform and apply the calculated parameters), and "轉換視覺化" (displaying all original and transformed points). This modular approach prioritizes a clear workflow for the user: define transformation first, then apply it, and finally visualize the overall effect. The layout uses Tailwind's flexbox and grid for responsiveness, ensuring optimal usability across devices. -->
+    <!-- Visualization & Content Choices:
+        - Control Point Data Input (Dynamic Fields): Report Info -> Control Points (ID, Original N, E, Target N, E). Goal -> Input/Clarity/Ease of Use. Viz -> Dynamic HTML rows with individual input fields, allowing users to add/remove points, with N/E labels. This directly addresses the user's feedback for separated fields and single ID entry and N/E coordinate system, with N before E.
+        - Parameter Calculation Results: Report Info -> Calculated Scale, Rotation, TE, TN. Goal -> Inform/Output. Viz -> Dedicated display fields for each parameter, with TE/TN labels.
+        - AI Parameter Interpretation: Report Info -> Calculated parameters. Goal -> Explain/Synthesize. Viz -> A button that triggers a Gemini API call to generate a textual interpretation of the calculated transformation parameters. This provides a clear, AI-powered explanation of complex results.
+        - Points to Transform Data Input: Report Info -> Points to Transform (ID, N, E). Goal -> Input. Viz -> Textarea for pasting CSV-like data, with N/E labels.
+        - Transformed Points Output: Report Info -> Transformed N', E'. Goal -> Inform/Output. Viz -> A dynamically generated table to list all transformed points for easy review, with N/E labels.
+        - Combined Scatter Plot: Report Info -> All original and transformed points. Goal -> Compare/Visualize Change/Synthesize. Viz -> Chart.js scatter plot on a Canvas. Interaction -> Automatic update on parameter calculation and transformation application; hover for tooltips. This comprehensive visualization allows users to see the effect of the transformation on both the control points that defined it and the new points being transformed.
+        - Justification -> Dynamic input fields for control points significantly improve user experience by removing the need for CSV formatting. The AI interpretation adds a "wow" factor by making the complex results immediately understandable. Textareas are retained for bulk input of points to transform. Dynamic display offers immediate feedback. The unified scatter plot is crucial for understanding the geometric impact of the transformation, now with N/E axis labels for domain alignment. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 50vh; /* Responsive height */
+            max-width: 800px; /* Max width for chart */
+            max-height: 500px; /* Max height for chart */
+            margin-left: auto;
+            margin-right: auto;
+            background-color: #f8fafc; /* slate-50 */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 60vh; /* Taller on desktop */
+            }
+        }
+        .form-input-sm {
+            @apply px-2 py-1 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 transition duration-150 ease-in-out w-full text-sm;
+        }
+        .form-textarea {
+            @apply px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150 ease-in-out w-full font-mono text-sm;
+        }
+        .param-display {
+            @apply bg-slate-100 p-2 rounded-md font-semibold text-blue-700;
+        }
+        .tab-button {
+            @apply px-4 py-2 rounded-t-lg font-semibold text-slate-700 bg-slate-200 hover:bg-slate-300 transition duration-150;
+        }
+        .tab-button.active {
+            @apply bg-white text-emerald-700 shadow-md;
+        }
+        .tab-content {
+            @apply bg-white p-6 md:p-8 rounded-b-xl rounded-tr-xl shadow-xl;
+        }
+        /* Spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3b82f6; /* blue-500 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-700 p-4 md:p-8">
+
+    <div class="container mx-auto max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-emerald-600 mb-2">?? 四參數轉換工具 ?</h1>
+            <p class="text-lg text-slate-600">利用已知點計算相似變換參數並應用於待轉換點</p>
+        </header>
+
+        <nav class="flex mb-4">
+            <button class="tab-button active" data-tab="calc-params">參數計算</button>
+            <button class="tab-button" data-tab="apply-transform">點位轉換</button>
+            <button class="tab-button" data-tab="visualization">結果視覺化</button>
+        </nav>
+
+        <main>
+            <!-- 參數計算 Tab -->
+            <section id="calc-params" class="tab-content active">
+                <h2 class="text-xl md:text-2xl font-semibold text-emerald-700 mb-4">1. 控制點數據與參數計算</h2>
+                <p class="text-slate-600 mb-4">請輸入至少兩組控制點。點位ID將用於匹配原始與目標點。</p>
+                
+                <div class="overflow-x-auto mb-4">
+                    <table class="w-full text-left table-auto border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700">
+                                <th class="p-2 border border-slate-300 w-24">點位 ID</th>
+                                <th class="p-2 border border-slate-300 text-center" colspan="2">原始座標 (N, E)</th>
+                                <th class="p-2 border border-slate-300 text-center" colspan="2">目標座標 (N', E')</th>
+                                <th class="p-2 border border-slate-300 w-16">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="controlPointsTableBody">
+                            <!-- Dynamic rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                    <button id="addControlPointBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-200 ease-in-out transform hover:scale-105">
+                        ? 新增點位
+                    </button>
+                    <button id="clearControlPointsBtn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-200 ease-in-out transform hover:scale-105">
+                        ??? 清除所有點位
+                    </button>
+                </div>
+
+                <button id="calculateParamsBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-200 ease-in-out transform hover:scale-105 mb-6 w-full">
+                    計算轉換參數 ??
+                </button>
+
+                <h3 class="text-lg md:text-xl font-semibold text-blue-700 mb-3">計算結果：四參數</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div><label class="block text-slate-700 font-medium">縮放比例 (s):</label><span id="paramScaleDisplay" class="param-display">--</span></div>
+                    <div><label class="block text-slate-700 font-medium">旋轉角度 (度):</label><span id="paramRotationDisplay" class="param-display">--</span></div>
+                    <div><label class="block text-slate-700 font-medium">東向平移 (TE):</label><span id="paramTxDisplay" class="param-display">--</span></div>
+                    <div><label class="block text-slate-700 font-medium">北向平移 (TN):</label><span id="paramTyDisplay" class="param-display">--</span></div>
+                </div>
+                <p id="paramCalcError" class="text-red-600 mt-4 hidden">錯誤：無法計算參數。請檢查數據格式、點位ID是否匹配或點位是否不足/重疊。</p>
+
+                <button id="interpretParamsBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-200 ease-in-out transform hover:scale-105 mt-6 w-full">
+                    ? 解讀轉換參數 ?
+                </button>
+                <div id="interpretationLoading" class="flex justify-center items-center mt-4 hidden">
+                    <div class="spinner"></div>
+                    <span class="ml-2 text-slate-600">AI 正在生成解讀...</span>
+                </div>
+                <div id="interpretationResult" class="bg-blue-50 p-4 rounded-lg mt-4 hidden">
+                    <h3 class="font-semibold text-blue-800 mb-2">AI 智慧解讀：</h3>
+                    <p id="interpretationText" class="text-slate-700 leading-relaxed"></p>
+                    <p id="interpretationError" class="text-red-600 mt-2 hidden">AI 解讀失敗，請稍後再試。</p>
+                </div>
+
+            </section>
+
+            <!-- 點位轉換 Tab -->
+            <section id="apply-transform" class="tab-content hidden">
+                <h2 class="text-xl md:text-2xl font-semibold text-emerald-700 mb-4">2. 待轉換點數據與應用</h2>
+                <p class="text-slate-600 mb-4">請將您想轉換的點數據貼到下方文字框中。每行一個點，格式為：<code class="font-mono text-sm bg-gray-100 p-1 rounded">點位ID, N, E</code>。</p>
+                <textarea id="pointsToTransformInput" class="form-textarea h-48 mb-4" placeholder="例如：
+TP1,12.0,15.0
+TP2,25.0,18.0
+TP3,18.0,12.0"></textarea>
+                <button id="applyTransformBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-200 ease-in-out transform hover:scale-105 mb-6">
+                    應用轉換 ??
+                </button>
+
+                <h3 class="text-lg md:text-xl font-semibold text-purple-700 mb-3">轉換後點位結果</h3>
+                <div id="transformedPointsOutput" class="max-h-60 overflow-y-auto bg-slate-50 p-4 rounded-md border border-slate-200">
+                    <table class="w-full text-left table-auto">
+                        <thead>
+                            <tr class="bg-slate-200 text-slate-700">
+                                <th class="p-2 border-b">ID</th>
+                                <th class="p-2 border-b">原始 N</th>
+                                <th class="p-2 border-b">原始 E</th>
+                                <th class="p-2 border-b">轉換後 N'</th>
+                                <th class="p-2 border-b">轉換後 E'</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transformedPointsTableBody">
+                            <tr class="text-slate-500"><td colspan="5" class="p-2 text-center">點擊「應用轉換」查看結果</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p id="transformApplyError" class="text-red-600 mt-4 hidden">錯誤：請先計算轉換參數並確認待轉換點數據格式正確。</p>
+            </section>
+
+            <!-- 視覺化 Tab -->
+            <section id="visualization" class="tab-content hidden">
+                <h2 class="text-xl md:text-2xl font-semibold text-emerald-700 mb-4 text-center">3. 轉換視覺化</h2>
+                <p class="text-slate-600 text-center mb-6">下方圖表顯示所有點位的原始位置與轉換後位置。藍色為原始點，紅色為轉換後點。</p>
+                <div class="chart-container">
+                    <canvas id="transformationChart"></canvas>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const controlPointsTableBody = document.getElementById('controlPointsTableBody');
+            const addControlPointBtn = document.getElementById('addControlPointBtn');
+            const clearControlPointsBtn = document.getElementById('clearControlPointsBtn');
+            const calculateParamsBtn = document.getElementById('calculateParamsBtn');
+            const paramScaleDisplay = document.getElementById('paramScaleDisplay');
+            const paramRotationDisplay = document.getElementById('paramRotationDisplay');
+            const paramTxDisplay = document.getElementById('paramTxDisplay'); // Now TE
+            const paramTyDisplay = document.getElementById('paramTyDisplay'); // Now TN
+            const paramCalcError = document.getElementById('paramCalcError');
+
+            const interpretParamsBtn = document.getElementById('interpretParamsBtn');
+            const interpretationLoading = document.getElementById('interpretationLoading');
+            const interpretationResult = document.getElementById('interpretationResult');
+            const interpretationText = document.getElementById('interpretationText');
+            const interpretationError = document.getElementById('interpretationError');
+
+            const pointsToTransformInput = document.getElementById('pointsToTransformInput');
+            const applyTransformBtn = document.getElementById('applyTransformBtn');
+            const transformedPointsTableBody = document.getElementById('transformedPointsTableBody');
+            const transformApplyError = document.getElementById('transformApplyError');
+
+            const chartCanvas = document.getElementById('transformationChart');
+            let scatterChart;
+
+            let globalCalculatedParams = null;
+            let globalControlPoints = []; // Unified control points (id, oldN, oldE, newN, newE)
+            let globalTransformedControlPoints = [];
+            let globalPointsToTransform = []; // Parsed points to transform from textarea
+            let globalTransformedPoints = []; // Transformed points
+
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            let pointCounter = 1; // For default ID generation
+
+            function setActiveTab(tabId) {
+                tabButtons.forEach(button => {
+                    if (button.dataset.tab === tabId) {
+                        button.classList.add('active');
+                    } else {
+                        button.classList.remove('active');
+                    }
+                });
+
+                tabContents.forEach(content => {
+                    if (content.id === tabId) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+
+                if (tabId === 'visualization') {
+                    updateChart();
+                }
+            }
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => setActiveTab(button.dataset.tab));
+            });
+
+            // Function to add a new control point input row with N, E order
+            function addControlPointRow(id = `CP${pointCounter++}`, oldN = '', oldE = '', newN = '', newE = '') {
+                const row = controlPointsTableBody.insertRow();
+                row.className = "control-point-row bg-white hover:bg-slate-50";
+                row.innerHTML = `
+                    <td class="p-2 border border-slate-300"><input type="text" value="${id}" class="form-input-sm w-20 point-id" placeholder="ID"></td>
+                    <td class="p-2 border border-slate-300"><input type="number" value="${oldN}" class="form-input-sm original-n" placeholder="N"></td>
+                    <td class="p-2 border border-slate-300"><input type="number" value="${oldE}" class="form-input-sm original-e" placeholder="E"></td>
+                    <td class="p-2 border border-slate-300"><input type="number" value="${newN}" class="form-input-sm target-n" placeholder="N'"></td>
+                    <td class="p-2 border border-slate-300"><input type="number" value="${newE}" class="form-input-sm target-e" placeholder="E'"></td>
+                    <td class="p-2 border border-slate-300 text-center">
+                        <button class="remove-point-btn bg-red-500 hover:bg-red-600 text-white text-sm px-2 py-1 rounded-md transition duration-150">移除</button>
+                    </td>
+                `;
+                row.querySelector('.remove-point-btn').addEventListener('click', function() {
+                    row.remove();
+                });
+            }
+
+            // Populate with initial example data (N,E order)
+            function populateInitialControlPoints() {
+                addControlPointRow('CP1', 10.0, 20.0, 15.0, 22.0); // N, E -> N', E'
+                addControlPointRow('CP2', 30.0, 40.0, 40.0, 45.0);
+                addControlPointRow('CP3', 50.0, 10.0, 50.0, 10.0);
+                addControlPointRow('CP4', 20.0, 30.0, 28.0, 35.0);
+            }
+
+            // Event listener for adding new point row
+            addControlPointBtn.addEventListener('click', () => addControlPointRow());
+
+            // Event listener for clearing all points
+            clearControlPointsBtn.addEventListener('click', function() {
+                controlPointsTableBody.innerHTML = '';
+                pointCounter = 1; // Reset counter
+            });
+
+            // Parse points from the dynamic input fields (N, E order)
+            function getControlPointsFromInputs() {
+                const rows = controlPointsTableBody.querySelectorAll('.control-point-row');
+                const points = [];
+                const ids = new Set();
+                let hasError = false;
+                let errorMessage = '';
+
+                rows.forEach(row => {
+                    const idInput = row.querySelector('.point-id');
+                    const oldNInput = row.querySelector('.original-n'); // N first
+                    const oldEInput = row.querySelector('.original-e'); // E second
+                    const newNInput = row.querySelector('.target-n'); // N' first
+                    const newEInput = row.querySelector('.target-e'); // E' second
+
+                    const id = idInput.value.trim();
+                    const oldN = parseFloat(oldNInput.value);
+                    const oldE = parseFloat(oldEInput.value);
+                    const newN = parseFloat(newNInput.value);
+                    const newE = parseFloat(newEInput.value);
+
+                    if (!id) {
+                        errorMessage = "錯誤：點位ID不能為空。";
+                        hasError = true;
+                        return;
+                    }
+                    if (ids.has(id)) {
+                        errorMessage = `錯誤：點位ID "${id}" 重複。`;
+                        hasError = true;
+                        return;
+                    }
+                    ids.add(id);
+
+                    if (isNaN(oldN) || isNaN(oldE) || isNaN(newN) || isNaN(newE)) {
+                        errorMessage = `錯誤：點位ID "${id}" 的座標包含無效數值。`;
+                        hasError = true;
+                        return;
+                    }
+
+                    points.push({ id, oldN, oldE, newN, newE }); // Storing as oldN, oldE, newN, newE
+                });
+
+                if (hasError) {
+                    paramCalcError.textContent = errorMessage;
+                    paramCalcError.classList.remove('hidden');
+                    return null;
+                }
+                return points;
+            }
+
+            // Generic parser for "ID, N, E" format (for points to transform textarea)
+            function parseNECSV(csvString) { // Renamed from parseENCSV
+                const lines = csvString.trim().split('\n').filter(line => line.trim() !== '');
+                const parsedPoints = {};
+                let startIndex = 0;
+                if (lines.length > 0) {
+                    const firstLineParts = lines[0].split(',').map(part => part.trim());
+                    if (firstLineParts.length >= 3 && isNaN(parseFloat(firstLineParts[1]))) {
+                        startIndex = 1;
+                    }
+                }
+
+                for (let i = startIndex; i < lines.length; i++) {
+                    const parts = lines[i].split(',').map(part => part.trim());
+                    if (parts.length >= 3) {
+                        const id = parts[0];
+                        const n = parseFloat(parts[1]); // N first
+                        const e = parseFloat(parts[2]); // E second
+                        if (id && !isNaN(n) && !isNaN(e)) {
+                            parsedPoints[id] = { id: id, n: n, e: e }; // Storing as n, e
+                        }
+                    }
+                }
+                return parsedPoints;
+            }
+
+            // Matrix Operations Helper for Least Squares (unchanged)
+            function multiplyMatrices(A, B) {
+                let rowsA = A.length, colsA = A[0].length,
+                    rowsB = B.length, colsB = B[0].length;
+                let result = Array(rowsA).fill(0).map(() => Array(colsB).fill(0));
+
+                if (colsA !== rowsB) {
+                    throw new Error("矩陣維度不匹配，無法相乘。");
+                }
+
+                for (let i = 0; i < rowsA; i++) {
+                    for (let j = 0; j < colsB; j++) {
+                        for (let k = 0; k < colsA; k++) {
+                            result[i][j] += A[i][k] * B[k][j];
+                        }
+                    }
+                }
+                return result;
+            }
+
+            function transposeMatrix(A) {
+                let rows = A.length, cols = A[0].length;
+                let result = Array(cols).fill(0).map(() => Array(rows).fill(0));
+                for (let i = 0; i < rows; i++) {
+                    for (let j = 0; j < cols; j++) {
+                        result[j][i] = A[i][j];
+                    }
+                }
+                return result;
+            }
+
+            function solveLinearSystem(A, B) {
+                let n = A.length;
+                let augmentedMatrix = Array(n).fill(0).map((_, i) => [...A[i], B[i][0]]);
+
+                for (let i = 0; i < n; i++) {
+                    let maxRow = i;
+                    for (let k = i + 1; k < n; k++) {
+                        if (Math.abs(augmentedMatrix[k][i]) > Math.abs(augmentedMatrix[maxRow][i])) {
+                            maxRow = k;
+                        }
+                    }
+                    [augmentedMatrix[i], augmentedMatrix[maxRow]] = [augmentedMatrix[maxRow], augmentedMatrix[i]];
+
+                    let pivot = augmentedMatrix[i][i];
+                    if (Math.abs(pivot) < 1e-9) {
+                        throw new Error("數據導致矩陣奇異或接近奇異，無法求得唯一解。請檢查控制點數據，確保它們不共線且分佈良好。");
+                    }
+
+                    for (let j = i; j < n + 1; j++) {
+                        augmentedMatrix[i][j] /= pivot;
+                    }
+
+                    for (let k = 0; k < n; k++) {
+                        if (k !== i) {
+                            let factor = augmentedMatrix[k][i];
+                            for (let j = i; j < n + 1; j++) {
+                                augmentedMatrix[k][j] -= factor * augmentedMatrix[i][j];
+                            }
+                        }
+                    }
+                }
+                return augmentedMatrix.map(row => row[n]);
+            }
+
+            function calculateFourParameters() {
+                paramCalcError.classList.add('hidden');
+                globalCalculatedParams = null;
+                globalControlPoints = getControlPointsFromInputs();
+
+                if (!globalControlPoints || globalControlPoints.length < 2) {
+                    paramCalcError.textContent = "錯誤：至少需要兩組匹配且有效的控制點來計算四參數。";
+                    paramCalcError.classList.remove('hidden');
+                    return;
+                }
+
+                let A_data = [];
+                let L_data = [];
+
+                globalControlPoints.forEach(p => {
+                    // E' = a*E - b*N + TE
+                    // N' = b*E + a*N + TN
+                    // Note: In the mathematical model, E is treated as X and N as Y.
+                    // The 'a' and 'b' parameters are derived from (E, N) -> (E', N').
+                    // For the matrix formulation, we need to map N to the Y component and E to the X component.
+                    A_data.push([p.oldE, -p.oldN, 1, 0]); // Row for E' (Corresponds to X')
+                    L_data.push([p.newE]);
+                    A_data.push([p.oldN, p.oldE, 0, 1]); // Row for N' (Corresponds to Y')
+                    L_data.push([p.newN]);
+                });
+
+                try {
+                    const A_T = transposeMatrix(A_data);
+                    const A_T_A = multiplyMatrices(A_T, A_data);
+                    const A_T_L = multiplyMatrices(A_T, L_data);
+
+                    const P = solveLinearSystem(A_T_A, A_T_L);
+
+                    const a = P[0];
+                    const b = P[1];
+                    const TE = P[2]; // Easting translation
+                    const TN = P[3]; // Northing translation
+
+                    const scale = Math.sqrt(a * a + b * b);
+                    const rotationRadians = Math.atan2(b, a);
+                    const rotationDegrees = rotationRadians * 180 / Math.PI;
+
+                    globalCalculatedParams = {
+                        scale: scale,
+                        rotationDegrees: rotationDegrees,
+                        te: TE,
+                        tn: TN,
+                        a: a,
+                        b: b
+                    };
+
+                    paramScaleDisplay.textContent = globalCalculatedParams.scale.toFixed(6);
+                    paramRotationDisplay.textContent = globalCalculatedParams.rotationDegrees.toFixed(6);
+                    paramTxDisplay.textContent = globalCalculatedParams.te.toFixed(6);
+                    paramTyDisplay.textContent = globalCalculatedParams.tn.toFixed(6);
+
+                    globalTransformedControlPoints = globalControlPoints.map(p => transformPoint(p.oldN, p.oldE, globalCalculatedParams)); // Pass N, E
+                    updateChart();
+                    setActiveTab('apply-transform');
+                } catch (error) {
+                    paramCalcError.textContent = `計算錯誤: ${error.message}`;
+                    paramCalcError.classList.remove('hidden');
+                    globalCalculatedParams = null;
+                    paramScaleDisplay.textContent = "--";
+                    paramRotationDisplay.textContent = "--";
+                    paramTxDisplay.textContent = "--";
+                    paramTyDisplay.textContent = "--";
+                }
+            }
+
+            // Transformed function now accepts N, E but internally uses them as Y, X for calculation
+            function transformPoint(n, e, params) { // Accepts N, E
+                if (!params) return null;
+                const { a, b, te, tn } = params;
+                // For calculation: E is X, N is Y
+                const ePrime = a * e - b * n + te; // E' = a*E - b*N + TE
+                const nPrime = b * e + a * n + tn; // N' = b*E + a*N + TN
+                return { n: nPrime, e: ePrime }; // Returns N', E'
+            }
+
+            async function interpretParameters() {
+                if (!globalCalculatedParams) {
+                    interpretationText.textContent = "請先計算轉換參數。";
+                    interpretationResult.classList.remove('hidden');
+                    interpretationError.classList.add('hidden');
+                    return;
+                }
+
+                interpretationLoading.classList.remove('hidden');
+                interpretationResult.classList.add('hidden');
+                interpretationError.classList.add('hidden');
+
+                const { scale, rotationDegrees, te, tn } = globalCalculatedParams;
+
+                const prompt = `您好，我剛剛執行了四參數轉換計算，得到了以下參數：
+- 縮放比例 (s): ${scale.toFixed(6)}
+- 旋轉角度 (度): ${rotationDegrees.toFixed(6)}
+- 東向平移 (TE): ${te.toFixed(6)}
+- 北向平移 (TN): ${tn.toFixed(6)}
+
+請以地理測量專業人員能夠理解的簡潔語言，解釋這些參數在座標轉換中的意義，並說明這個轉換的整體特徵（例如，是放大還是縮小？旋轉方向？主要的平移方向？）。`;
+
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = ""; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        interpretationText.textContent = text;
+                        interpretationResult.classList.remove('hidden');
+                    } else {
+                        interpretationError.textContent = "AI 解讀失敗，無法獲取有效回應。";
+                        interpretationError.classList.remove('hidden');
+                        console.error('Gemini API returned an unexpected structure:', result);
+                    }
+                } catch (error) {
+                    interpretationError.textContent = `AI 解讀失敗：${error.message}。請檢查網路連線或 API 狀態。`;
+                    interpretationError.classList.remove('hidden');
+                    console.error('Error calling Gemini API:', error);
+                } finally {
+                    interpretationLoading.classList.add('hidden');
+                }
+            }
+
+
+            function applyTransformationToPoints() {
+                transformApplyError.classList.add('hidden');
+                if (!globalCalculatedParams) {
+                    transformApplyError.textContent = "錯誤：請先計算轉換參數。";
+                    transformApplyError.classList.remove('hidden');
+                    return;
+                }
+
+                const pointsToTransformMap = parseNECSV(pointsToTransformInput.value); // Use parseNECSV
+                globalPointsToTransform = Object.values(pointsToTransformMap).map(p => ({id: p.id, n: p.n, e: p.e})); // Store as n, e
+
+                globalTransformedPoints = [];
+                transformedPointsTableBody.innerHTML = '';
+
+                if (globalPointsToTransform.length === 0) {
+                     transformedPointsTableBody.innerHTML = '<tr class="text-slate-500"><td colspan="5" class="p-2 text-center">沒有待轉換點數據</td></tr>';
+                     updateChart();
+                     return;
+                }
+
+                globalPointsToTransform.forEach(p => {
+                    const transformed = transformPoint(p.n, p.e, globalCalculatedParams); // Transform using N, E
+                    globalTransformedPoints.push({ id: p.id, original: { n: p.n, e: p.e }, transformed: transformed });
+
+                    const row = transformedPointsTableBody.insertRow();
+                    row.className = "hover:bg-slate-50";
+                    row.innerHTML = `
+                        <td class="p-2 border-b">${p.id}</td>
+                        <td class="p-2 border-b">${p.n.toFixed(2)}</td>
+                        <td class="p-2 border-b">${p.e.toFixed(2)}</td>
+                        <td class="p-2 border-b">${transformed.n.toFixed(2)}</td>
+                        <td class="p-2 border-b">${transformed.e.toFixed(2)}</td>
+                    `;
+                });
+                updateChart();
+                setActiveTab('visualization');
+            }
+
+            function initializeChart() {
+                const ctx = chartCanvas.getContext('2d');
+                scatterChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [
+                            {
+                                label: '原始控制點',
+                                data: [],
+                                backgroundColor: 'rgba(59, 130, 246, 0.7)', // blue-500
+                                borderColor: 'rgb(59, 130, 246)',
+                                pointRadius: 7,
+                                pointHoverRadius: 9,
+                                pointStyle: 'circle'
+                            },
+                            {
+                                label: '轉換後控制點',
+                                data: [],
+                                backgroundColor: 'rgba(239, 68, 68, 0.7)', // red-500
+                                borderColor: 'rgb(239, 68, 68)',
+                                pointRadius: 7,
+                                pointHoverRadius: 9,
+                                pointStyle: 'triangle'
+                            },
+                            {
+                                label: '原始待轉換點',
+                                data: [],
+                                backgroundColor: 'rgba(16, 185, 129, 0.7)', // emerald-500
+                                borderColor: 'rgb(16, 185, 129)',
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                pointStyle: 'rect'
+                            },
+                            {
+                                label: '轉換後待轉換點',
+                                data: [],
+                                backgroundColor: 'rgba(124, 58, 237, 0.7)', // purple-500
+                                borderColor: 'rgb(124, 58, 237)',
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                pointStyle: 'star'
+                            }
+                        ]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        responsive: true,
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                position: 'bottom',
+                                title: { display: true, text: 'E 座標', color: '#475569', font: { family: "'Inter', 'Noto Sans TC', sans-serif" } }, // E on X-axis for plotting
+                                grid: { color: 'rgba(0,0,0,0.05)' },
+                                ticks: { color: '#475569', font: { family: "'Inter', 'Noto Sans TC', sans-serif" } }
+                            },
+                            y: {
+                                type: 'linear',
+                                title: { display: true, text: 'N 座標', color: '#475569', font: { family: "'Inter', 'Noto Sans TC', sans-serif" } }, // N on Y-axis for plotting
+                                grid: { color: 'rgba(0,0,0,0.05)' },
+                                ticks: { color: '#475569', font: { family: "'Inter', 'Noto Sans TC', sans-serif" } }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItem) {
+                                        return tooltipItem[0].dataset.label;
+                                    },
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        // Tooltip display: (N: y-value, E: x-value)
+                                        if (context.parsed.x !== null && context.parsed.y !== null) {
+                                            label += `(N: ${context.parsed.y.toFixed(2)}, E: ${context.parsed.x.toFixed(2)})`;
+                                        }
+                                        const index = context.dataIndex;
+                                        let pointId = '';
+                                        if ((context.dataset.label === '原始控制點' || context.dataset.label === '轉換後控制點') && globalControlPoints[index]) {
+                                            pointId = `ID: ${globalControlPoints[index].id}`;
+                                        } else if ((context.dataset.label === '原始待轉換點' || context.dataset.label === '轉換後待轉換點') && globalPointsToTransform[index]) {
+                                            pointId = `ID: ${globalPointsToTransform[index].id}`;
+                                        }
+                                        return [label, pointId].filter(Boolean);
+                                    }
+                                }
+                            },
+                            legend: {
+                                labels: {
+                                    font: { size: 14, family: "'Inter', 'Noto Sans TC', sans-serif" },
+                                    color: '#475569'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function updateChart() {
+                // For Chart.js, X-axis is usually the first coordinate, Y-axis is the second.
+                // In N, E convention, E is often treated as X and N as Y for plotting.
+                // So, we map E to x and N to y for the chart data.
+                scatterChart.data.datasets[0].data = globalControlPoints.map(p => ({ x: p.oldE, y: p.oldN }));
+                scatterChart.data.datasets[1].data = globalTransformedControlPoints.map(p => ({ x: p.e, y: p.n }));
+                scatterChart.data.datasets[2].data = globalPointsToTransform.map(p => ({ x: p.e, y: p.n }));
+                scatterChart.data.datasets[3].data = globalTransformedPoints.map(p => ({ x: p.transformed.e, y: p.transformed.n }));
+
+                let allEs = [...scatterChart.data.datasets[0].data, ...scatterChart.data.datasets[1].data,
+                             ...scatterChart.data.datasets[2].data, ...scatterChart.data.datasets[3].data].map(p => p.x);
+                let allNs = [...scatterChart.data.datasets[0].data, ...scatterChart.data.datasets[1].data,
+                             ...scatterChart.data.datasets[2].data, ...scatterChart.data.datasets[3].data].map(p => p.y);
+
+                if (allEs.length > 0 && allNs.length > 0) {
+                    const minE = Math.min(...allEs);
+                    const maxE = Math.max(...allEs);
+                    const minN = Math.min(...allNs);
+                    const maxN = Math.max(...allNs);
+
+                    const ePadding = (maxE - minE) * 0.1;
+                    const nPadding = (maxN - minN) * 0.1;
+
+                    scatterChart.options.scales.x.min = minE - ePadding;
+                    scatterChart.options.scales.x.max = maxE + ePadding;
+                    scatterChart.options.scales.y.min = minN - nPadding;
+                    scatterChart.options.scales.y.max = maxN + nPadding;
+                } else {
+                    scatterChart.options.scales.x.min = -10;
+                    scatterChart.options.scales.x.max = 10;
+                    scatterChart.options.scales.y.min = -10;
+                    scatterChart.options.scales.y.max = 10;
+                }
+
+                scatterChart.update();
+            }
+
+            // Initial setup
+            populateInitialControlPoints(); // Add some initial rows with example data
+            calculateParamsBtn.addEventListener('click', calculateFourParameters);
+            interpretParamsBtn.addEventListener('click', interpretParameters); // New event listener for AI interpretation
+            applyTransformBtn.addEventListener('click', applyTransformationToPoints);
+
+            initializeChart();
+            updateChart();
+        });
+    </script>
+</body>
+</html>
