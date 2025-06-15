@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>¥|°Ñ¼ÆÂà´«¤u¨ã</title>
+    <title>å››åƒæ•¸è½‰æ›å·¥å…·</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Fresh Serenity (Soft blues and greens with neutral grays for text, a calming and clear aesthetic. Background slate-50, primary text slate-700, accents emerald-600/blue-600.) -->
-    <!-- Application Structure Plan: The SPA is structured into three main interactive sections: "±±¨îÂI¼Æ¾Ú»P°Ñ¼Æ­pºâ" (now with dynamic, individual input fields for each coordinate, enhancing user experience and including AI interpretation), "«İÂà´«ÂI¼Æ¾Ú»PÀ³¥Î" (where users paste points to transform and apply the calculated parameters), and "Âà´«µøÄ±¤Æ" (displaying all original and transformed points). This modular approach prioritizes a clear workflow for the user: define transformation first, then apply it, and finally visualize the overall effect. The layout uses Tailwind's flexbox and grid for responsiveness, ensuring optimal usability across devices. -->
+    <!-- Application Structure Plan: The SPA is structured into three main interactive sections: "æ§åˆ¶é»æ•¸æ“šèˆ‡åƒæ•¸è¨ˆç®—" (now with dynamic, individual input fields for each coordinate, enhancing user experience and including AI interpretation), "å¾…è½‰æ›é»æ•¸æ“šèˆ‡æ‡‰ç”¨" (where users paste points to transform and apply the calculated parameters), and "è½‰æ›è¦–è¦ºåŒ–" (displaying all original and transformed points). This modular approach prioritizes a clear workflow for the user: define transformation first, then apply it, and finally visualize the overall effect. The layout uses Tailwind's flexbox and grid for responsiveness, ensuring optimal usability across devices. -->
     <!-- Visualization & Content Choices:
         - Control Point Data Input (Dynamic Fields): Report Info -> Control Points (ID, Original N, E, Target N, E). Goal -> Input/Clarity/Ease of Use. Viz -> Dynamic HTML rows with individual input fields, allowing users to add/remove points, with N/E labels. This directly addresses the user's feedback for separated fields and single ID entry and N/E coordinate system, with N before E.
         - Parameter Calculation Results: Report Info -> Calculated Scale, Rotation, TE, TN. Goal -> Inform/Output. Viz -> Dedicated display fields for each parameter, with TE/TN labels.
@@ -78,30 +78,30 @@
 
     <div class="container mx-auto max-w-4xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-emerald-600 mb-2">?? ¥|°Ñ¼ÆÂà´«¤u¨ã ?</h1>
-            <p class="text-lg text-slate-600">§Q¥Î¤wª¾ÂI­pºâ¬Û¦üÅÜ´«°Ñ¼Æ¨ÃÀ³¥Î©ó«İÂà´«ÂI</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-emerald-600 mb-2">ğŸŒ å››åƒæ•¸è½‰æ›å·¥å…· âœ¨</h1>
+            <p class="text-lg text-slate-600">åˆ©ç”¨å·²çŸ¥é»è¨ˆç®—ç›¸ä¼¼è®Šæ›åƒæ•¸ä¸¦æ‡‰ç”¨æ–¼å¾…è½‰æ›é»</p>
         </header>
 
         <nav class="flex mb-4">
-            <button class="tab-button active" data-tab="calc-params">°Ñ¼Æ­pºâ</button>
-            <button class="tab-button" data-tab="apply-transform">ÂI¦ìÂà´«</button>
-            <button class="tab-button" data-tab="visualization">µ²ªGµøÄ±¤Æ</button>
+            <button class="tab-button active" data-tab="calc-params">åƒæ•¸è¨ˆç®—</button>
+            <button class="tab-button" data-tab="apply-transform">é»ä½è½‰æ›</button>
+            <button class="tab-button" data-tab="visualization">çµæœè¦–è¦ºåŒ–</button>
         </nav>
 
         <main>
-            <!-- °Ñ¼Æ­pºâ Tab -->
+            <!-- åƒæ•¸è¨ˆç®— Tab -->
             <section id="calc-params" class="tab-content active">
-                <h2 class="text-xl md:text-2xl font-semibold text-emerald-700 mb-4">1. ±±¨îÂI¼Æ¾Ú»P°Ñ¼Æ­pºâ</h2>
-                <p class="text-slate-600 mb-4">½Ğ¿é¤J¦Ü¤Ö¨â²Õ±±¨îÂI¡CÂI¦ìID±N¥Î©ó¤Ç°t­ì©l»P¥Ø¼ĞÂI¡C</p>
+                <h2 class="text-xl md:text-2xl font-semibold text-emerald-700 mb-4">1. æ§åˆ¶é»æ•¸æ“šèˆ‡åƒæ•¸è¨ˆç®—</h2>
+                <p class="text-slate-600 mb-4">è«‹è¼¸å…¥è‡³å°‘å…©çµ„æ§åˆ¶é»ã€‚é»ä½IDå°‡ç”¨æ–¼åŒ¹é…åŸå§‹èˆ‡ç›®æ¨™é»ã€‚</p>
                 
                 <div class="overflow-x-auto mb-4">
                     <table class="w-full text-left table-auto border-collapse">
                         <thead>
                             <tr class="bg-slate-100 text-slate-700">
-                                <th class="p-2 border border-slate-300 w-24">ÂI¦ì ID</th>
-                                <th class="p-2 border border-slate-300 text-center" colspan="2">­ì©l®y¼Ğ (N, E)</th>
-                                <th class="p-2 border border-slate-300 text-center" colspan="2">¥Ø¼Ğ®y¼Ğ (N', E')</th>
-                                <th class="p-2 border border-slate-300 w-16">¾Ş§@</th>
+                                <th class="p-2 border border-slate-300 w-24">é»ä½ ID</th>
+                                <th class="p-2 border border-slate-300 text-center" colspan="2">åŸå§‹åº§æ¨™ (N, E)</th>
+                                <th class="p-2 border border-slate-300 text-center" colspan="2">ç›®æ¨™åº§æ¨™ (N', E')</th>
+                                <th class="p-2 border border-slate-300 w-16">æ“ä½œ</th>
                             </tr>
                         </thead>
                         <tbody id="controlPointsTableBody">
@@ -112,77 +112,77 @@
 
                 <div class="flex flex-col sm:flex-row gap-4 mb-6">
                     <button id="addControlPointBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-200 ease-in-out transform hover:scale-105">
-                        ? ·s¼WÂI¦ì
+                        â• æ–°å¢é»ä½
                     </button>
                     <button id="clearControlPointsBtn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-200 ease-in-out transform hover:scale-105">
-                        ??? ²M°£©Ò¦³ÂI¦ì
+                        ğŸ—‘ï¸ æ¸…é™¤æ‰€æœ‰é»ä½
                     </button>
                 </div>
 
                 <button id="calculateParamsBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-200 ease-in-out transform hover:scale-105 mb-6 w-full">
-                    ­pºâÂà´«°Ñ¼Æ ??
+                    è¨ˆç®—è½‰æ›åƒæ•¸ âš™ï¸
                 </button>
 
-                <h3 class="text-lg md:text-xl font-semibold text-blue-700 mb-3">­pºâµ²ªG¡G¥|°Ñ¼Æ</h3>
+                <h3 class="text-lg md:text-xl font-semibold text-blue-700 mb-3">è¨ˆç®—çµæœï¼šå››åƒæ•¸</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div><label class="block text-slate-700 font-medium">ÁY©ñ¤ñ¨Ò (s):</label><span id="paramScaleDisplay" class="param-display">--</span></div>
-                    <div><label class="block text-slate-700 font-medium">±ÛÂà¨¤«× («×):</label><span id="paramRotationDisplay" class="param-display">--</span></div>
-                    <div><label class="block text-slate-700 font-medium">ªF¦V¥­²¾ (TE):</label><span id="paramTxDisplay" class="param-display">--</span></div>
-                    <div><label class="block text-slate-700 font-medium">¥_¦V¥­²¾ (TN):</label><span id="paramTyDisplay" class="param-display">--</span></div>
+                    <div><label class="block text-slate-700 font-medium">ç¸®æ”¾æ¯”ä¾‹ (s):</label><span id="paramScaleDisplay" class="param-display">--</span></div>
+                    <div><label class="block text-slate-700 font-medium">æ—‹è½‰è§’åº¦ (åº¦):</label><span id="paramRotationDisplay" class="param-display">--</span></div>
+                    <div><label class="block text-slate-700 font-medium">æ±å‘å¹³ç§» (TE):</label><span id="paramTxDisplay" class="param-display">--</span></div>
+                    <div><label class="block text-slate-700 font-medium">åŒ—å‘å¹³ç§» (TN):</label><span id="paramTyDisplay" class="param-display">--</span></div>
                 </div>
-                <p id="paramCalcError" class="text-red-600 mt-4 hidden">¿ù»~¡GµLªk­pºâ°Ñ¼Æ¡C½ĞÀË¬d¼Æ¾Ú®æ¦¡¡BÂI¦ìID¬O§_¤Ç°t©ÎÂI¦ì¬O§_¤£¨¬/­«Å|¡C</p>
+                <p id="paramCalcError" class="text-red-600 mt-4 hidden">éŒ¯èª¤ï¼šç„¡æ³•è¨ˆç®—åƒæ•¸ã€‚è«‹æª¢æŸ¥æ•¸æ“šæ ¼å¼ã€é»ä½IDæ˜¯å¦åŒ¹é…æˆ–é»ä½æ˜¯å¦ä¸è¶³/é‡ç–Šã€‚</p>
 
                 <button id="interpretParamsBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-200 ease-in-out transform hover:scale-105 mt-6 w-full">
-                    ? ¸ÑÅªÂà´«°Ñ¼Æ ?
+                    âœ¨ è§£è®€è½‰æ›åƒæ•¸ âœ¨
                 </button>
                 <div id="interpretationLoading" class="flex justify-center items-center mt-4 hidden">
                     <div class="spinner"></div>
-                    <span class="ml-2 text-slate-600">AI ¥¿¦b¥Í¦¨¸ÑÅª...</span>
+                    <span class="ml-2 text-slate-600">AI æ­£åœ¨ç”Ÿæˆè§£è®€...</span>
                 </div>
                 <div id="interpretationResult" class="bg-blue-50 p-4 rounded-lg mt-4 hidden">
-                    <h3 class="font-semibold text-blue-800 mb-2">AI ´¼¼z¸ÑÅª¡G</h3>
+                    <h3 class="font-semibold text-blue-800 mb-2">AI æ™ºæ…§è§£è®€ï¼š</h3>
                     <p id="interpretationText" class="text-slate-700 leading-relaxed"></p>
-                    <p id="interpretationError" class="text-red-600 mt-2 hidden">AI ¸ÑÅª¥¢±Ñ¡A½Ğµy«á¦A¸Õ¡C</p>
+                    <p id="interpretationError" class="text-red-600 mt-2 hidden">AI è§£è®€å¤±æ•—ï¼Œè«‹ç¨å¾Œå†è©¦ã€‚</p>
                 </div>
 
             </section>
 
-            <!-- ÂI¦ìÂà´« Tab -->
+            <!-- é»ä½è½‰æ› Tab -->
             <section id="apply-transform" class="tab-content hidden">
-                <h2 class="text-xl md:text-2xl font-semibold text-emerald-700 mb-4">2. «İÂà´«ÂI¼Æ¾Ú»PÀ³¥Î</h2>
-                <p class="text-slate-600 mb-4">½Ğ±N±z·QÂà´«ªºÂI¼Æ¾Ú¶K¨ì¤U¤è¤å¦r®Ø¤¤¡C¨C¦æ¤@­ÓÂI¡A®æ¦¡¬°¡G<code class="font-mono text-sm bg-gray-100 p-1 rounded">ÂI¦ìID, N, E</code>¡C</p>
-                <textarea id="pointsToTransformInput" class="form-textarea h-48 mb-4" placeholder="¨Ò¦p¡G
+                <h2 class="text-xl md:text-2xl font-semibold text-emerald-700 mb-4">2. å¾…è½‰æ›é»æ•¸æ“šèˆ‡æ‡‰ç”¨</h2>
+                <p class="text-slate-600 mb-4">è«‹å°‡æ‚¨æƒ³è½‰æ›çš„é»æ•¸æ“šè²¼åˆ°ä¸‹æ–¹æ–‡å­—æ¡†ä¸­ã€‚æ¯è¡Œä¸€å€‹é»ï¼Œæ ¼å¼ç‚ºï¼š<code class="font-mono text-sm bg-gray-100 p-1 rounded">é»ä½ID, N, E</code>ã€‚</p>
+                <textarea id="pointsToTransformInput" class="form-textarea h-48 mb-4" placeholder="ä¾‹å¦‚ï¼š
 TP1,12.0,15.0
 TP2,25.0,18.0
 TP3,18.0,12.0"></textarea>
                 <button id="applyTransformBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-200 ease-in-out transform hover:scale-105 mb-6">
-                    À³¥ÎÂà´« ??
+                    æ‡‰ç”¨è½‰æ› â¡ï¸
                 </button>
 
-                <h3 class="text-lg md:text-xl font-semibold text-purple-700 mb-3">Âà´««áÂI¦ìµ²ªG</h3>
+                <h3 class="text-lg md:text-xl font-semibold text-purple-700 mb-3">è½‰æ›å¾Œé»ä½çµæœ</h3>
                 <div id="transformedPointsOutput" class="max-h-60 overflow-y-auto bg-slate-50 p-4 rounded-md border border-slate-200">
                     <table class="w-full text-left table-auto">
                         <thead>
                             <tr class="bg-slate-200 text-slate-700">
                                 <th class="p-2 border-b">ID</th>
-                                <th class="p-2 border-b">­ì©l N</th>
-                                <th class="p-2 border-b">­ì©l E</th>
-                                <th class="p-2 border-b">Âà´««á N'</th>
-                                <th class="p-2 border-b">Âà´««á E'</th>
+                                <th class="p-2 border-b">åŸå§‹ N</th>
+                                <th class="p-2 border-b">åŸå§‹ E</th>
+                                <th class="p-2 border-b">è½‰æ›å¾Œ N'</th>
+                                <th class="p-2 border-b">è½‰æ›å¾Œ E'</th>
                             </tr>
                         </thead>
                         <tbody id="transformedPointsTableBody">
-                            <tr class="text-slate-500"><td colspan="5" class="p-2 text-center">ÂIÀ»¡uÀ³¥ÎÂà´«¡v¬d¬İµ²ªG</td></tr>
+                            <tr class="text-slate-500"><td colspan="5" class="p-2 text-center">é»æ“Šã€Œæ‡‰ç”¨è½‰æ›ã€æŸ¥çœ‹çµæœ</td></tr>
                         </tbody>
                     </table>
                 </div>
-                <p id="transformApplyError" class="text-red-600 mt-4 hidden">¿ù»~¡G½Ğ¥ı­pºâÂà´«°Ñ¼Æ¨Ã½T»{«İÂà´«ÂI¼Æ¾Ú®æ¦¡¥¿½T¡C</p>
+                <p id="transformApplyError" class="text-red-600 mt-4 hidden">éŒ¯èª¤ï¼šè«‹å…ˆè¨ˆç®—è½‰æ›åƒæ•¸ä¸¦ç¢ºèªå¾…è½‰æ›é»æ•¸æ“šæ ¼å¼æ­£ç¢ºã€‚</p>
             </section>
 
-            <!-- µøÄ±¤Æ Tab -->
+            <!-- è¦–è¦ºåŒ– Tab -->
             <section id="visualization" class="tab-content hidden">
-                <h2 class="text-xl md:text-2xl font-semibold text-emerald-700 mb-4 text-center">3. Âà´«µøÄ±¤Æ</h2>
-                <p class="text-slate-600 text-center mb-6">¤U¤è¹ÏªíÅã¥Ü©Ò¦³ÂI¦ìªº­ì©l¦ì¸m»PÂà´««á¦ì¸m¡CÂÅ¦â¬°­ì©lÂI¡A¬õ¦â¬°Âà´««áÂI¡C</p>
+                <h2 class="text-xl md:text-2xl font-semibold text-emerald-700 mb-4 text-center">3. è½‰æ›è¦–è¦ºåŒ–</h2>
+                <p class="text-slate-600 text-center mb-6">ä¸‹æ–¹åœ–è¡¨é¡¯ç¤ºæ‰€æœ‰é»ä½çš„åŸå§‹ä½ç½®èˆ‡è½‰æ›å¾Œä½ç½®ã€‚è—è‰²ç‚ºåŸå§‹é»ï¼Œç´…è‰²ç‚ºè½‰æ›å¾Œé»ã€‚</p>
                 <div class="chart-container">
                     <canvas id="transformationChart"></canvas>
                 </div>
@@ -264,7 +264,7 @@ TP3,18.0,12.0"></textarea>
                     <td class="p-2 border border-slate-300"><input type="number" value="${newN}" class="form-input-sm target-n" placeholder="N'"></td>
                     <td class="p-2 border border-slate-300"><input type="number" value="${newE}" class="form-input-sm target-e" placeholder="E'"></td>
                     <td class="p-2 border border-slate-300 text-center">
-                        <button class="remove-point-btn bg-red-500 hover:bg-red-600 text-white text-sm px-2 py-1 rounded-md transition duration-150">²¾°£</button>
+                        <button class="remove-point-btn bg-red-500 hover:bg-red-600 text-white text-sm px-2 py-1 rounded-md transition duration-150">ç§»é™¤</button>
                     </td>
                 `;
                 row.querySelector('.remove-point-btn').addEventListener('click', function() {
@@ -311,19 +311,19 @@ TP3,18.0,12.0"></textarea>
                     const newE = parseFloat(newEInput.value);
 
                     if (!id) {
-                        errorMessage = "¿ù»~¡GÂI¦ìID¤£¯à¬°ªÅ¡C";
+                        errorMessage = "éŒ¯èª¤ï¼šé»ä½IDä¸èƒ½ç‚ºç©ºã€‚";
                         hasError = true;
                         return;
                     }
                     if (ids.has(id)) {
-                        errorMessage = `¿ù»~¡GÂI¦ìID "${id}" ­«½Æ¡C`;
+                        errorMessage = `éŒ¯èª¤ï¼šé»ä½ID "${id}" é‡è¤‡ã€‚`;
                         hasError = true;
                         return;
                     }
                     ids.add(id);
 
                     if (isNaN(oldN) || isNaN(oldE) || isNaN(newN) || isNaN(newE)) {
-                        errorMessage = `¿ù»~¡GÂI¦ìID "${id}" ªº®y¼Ğ¥]§tµL®Ä¼Æ­È¡C`;
+                        errorMessage = `éŒ¯èª¤ï¼šé»ä½ID "${id}" çš„åº§æ¨™åŒ…å«ç„¡æ•ˆæ•¸å€¼ã€‚`;
                         hasError = true;
                         return;
                     }
@@ -372,7 +372,7 @@ TP3,18.0,12.0"></textarea>
                 let result = Array(rowsA).fill(0).map(() => Array(colsB).fill(0));
 
                 if (colsA !== rowsB) {
-                    throw new Error("¯x°}ºû«×¤£¤Ç°t¡AµLªk¬Û­¼¡C");
+                    throw new Error("çŸ©é™£ç¶­åº¦ä¸åŒ¹é…ï¼Œç„¡æ³•ç›¸ä¹˜ã€‚");
                 }
 
                 for (let i = 0; i < rowsA; i++) {
@@ -411,7 +411,7 @@ TP3,18.0,12.0"></textarea>
 
                     let pivot = augmentedMatrix[i][i];
                     if (Math.abs(pivot) < 1e-9) {
-                        throw new Error("¼Æ¾Ú¾É­P¯x°}©_²§©Î±µªñ©_²§¡AµLªk¨D±o°ß¤@¸Ñ¡C½ĞÀË¬d±±¨îÂI¼Æ¾Ú¡A½T«O¥¦­Ì¤£¦@½u¥B¤À§G¨}¦n¡C");
+                        throw new Error("æ•¸æ“šå°è‡´çŸ©é™£å¥‡ç•°æˆ–æ¥è¿‘å¥‡ç•°ï¼Œç„¡æ³•æ±‚å¾—å”¯ä¸€è§£ã€‚è«‹æª¢æŸ¥æ§åˆ¶é»æ•¸æ“šï¼Œç¢ºä¿å®ƒå€‘ä¸å…±ç·šä¸”åˆ†ä½ˆè‰¯å¥½ã€‚");
                     }
 
                     for (let j = i; j < n + 1; j++) {
@@ -436,7 +436,7 @@ TP3,18.0,12.0"></textarea>
                 globalControlPoints = getControlPointsFromInputs();
 
                 if (!globalControlPoints || globalControlPoints.length < 2) {
-                    paramCalcError.textContent = "¿ù»~¡G¦Ü¤Ö»İ­n¨â²Õ¤Ç°t¥B¦³®Äªº±±¨îÂI¨Ó­pºâ¥|°Ñ¼Æ¡C";
+                    paramCalcError.textContent = "éŒ¯èª¤ï¼šè‡³å°‘éœ€è¦å…©çµ„åŒ¹é…ä¸”æœ‰æ•ˆçš„æ§åˆ¶é»ä¾†è¨ˆç®—å››åƒæ•¸ã€‚";
                     paramCalcError.classList.remove('hidden');
                     return;
                 }
@@ -490,7 +490,7 @@ TP3,18.0,12.0"></textarea>
                     updateChart();
                     setActiveTab('apply-transform');
                 } catch (error) {
-                    paramCalcError.textContent = `­pºâ¿ù»~: ${error.message}`;
+                    paramCalcError.textContent = `è¨ˆç®—éŒ¯èª¤: ${error.message}`;
                     paramCalcError.classList.remove('hidden');
                     globalCalculatedParams = null;
                     paramScaleDisplay.textContent = "--";
@@ -512,7 +512,7 @@ TP3,18.0,12.0"></textarea>
 
             async function interpretParameters() {
                 if (!globalCalculatedParams) {
-                    interpretationText.textContent = "½Ğ¥ı­pºâÂà´«°Ñ¼Æ¡C";
+                    interpretationText.textContent = "è«‹å…ˆè¨ˆç®—è½‰æ›åƒæ•¸ã€‚";
                     interpretationResult.classList.remove('hidden');
                     interpretationError.classList.add('hidden');
                     return;
@@ -524,13 +524,13 @@ TP3,18.0,12.0"></textarea>
 
                 const { scale, rotationDegrees, te, tn } = globalCalculatedParams;
 
-                const prompt = `±z¦n¡A§Ú­è­è°õ¦æ¤F¥|°Ñ¼ÆÂà´«­pºâ¡A±o¨ì¤F¥H¤U°Ñ¼Æ¡G
-- ÁY©ñ¤ñ¨Ò (s): ${scale.toFixed(6)}
-- ±ÛÂà¨¤«× («×): ${rotationDegrees.toFixed(6)}
-- ªF¦V¥­²¾ (TE): ${te.toFixed(6)}
-- ¥_¦V¥­²¾ (TN): ${tn.toFixed(6)}
+                const prompt = `æ‚¨å¥½ï¼Œæˆ‘å‰›å‰›åŸ·è¡Œäº†å››åƒæ•¸è½‰æ›è¨ˆç®—ï¼Œå¾—åˆ°äº†ä»¥ä¸‹åƒæ•¸ï¼š
+- ç¸®æ”¾æ¯”ä¾‹ (s): ${scale.toFixed(6)}
+- æ—‹è½‰è§’åº¦ (åº¦): ${rotationDegrees.toFixed(6)}
+- æ±å‘å¹³ç§» (TE): ${te.toFixed(6)}
+- åŒ—å‘å¹³ç§» (TN): ${tn.toFixed(6)}
 
-½Ğ¥H¦a²z´ú¶q±M·~¤H­û¯à°÷²z¸ÑªºÂ²¼ä»y¨¥¡A¸ÑÄÀ³o¨Ç°Ñ¼Æ¦b®y¼ĞÂà´«¤¤ªº·N¸q¡A¨Ã»¡©ú³o­ÓÂà´«ªº¾ãÅé¯S¼x¡]¨Ò¦p¡A¬O©ñ¤jÁÙ¬OÁY¤p¡H±ÛÂà¤è¦V¡H¥D­nªº¥­²¾¤è¦V¡H¡^¡C`;
+è«‹ä»¥åœ°ç†æ¸¬é‡å°ˆæ¥­äººå“¡èƒ½å¤ ç†è§£çš„ç°¡æ½”èªè¨€ï¼Œè§£é‡‹é€™äº›åƒæ•¸åœ¨åº§æ¨™è½‰æ›ä¸­çš„æ„ç¾©ï¼Œä¸¦èªªæ˜é€™å€‹è½‰æ›çš„æ•´é«”ç‰¹å¾µï¼ˆä¾‹å¦‚ï¼Œæ˜¯æ”¾å¤§é‚„æ˜¯ç¸®å°ï¼Ÿæ—‹è½‰æ–¹å‘ï¼Ÿä¸»è¦çš„å¹³ç§»æ–¹å‘ï¼Ÿï¼‰ã€‚`;
 
                 let chatHistory = [];
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
@@ -553,12 +553,12 @@ TP3,18.0,12.0"></textarea>
                         interpretationText.textContent = text;
                         interpretationResult.classList.remove('hidden');
                     } else {
-                        interpretationError.textContent = "AI ¸ÑÅª¥¢±Ñ¡AµLªkÀò¨ú¦³®Ä¦^À³¡C";
+                        interpretationError.textContent = "AI è§£è®€å¤±æ•—ï¼Œç„¡æ³•ç²å–æœ‰æ•ˆå›æ‡‰ã€‚";
                         interpretationError.classList.remove('hidden');
                         console.error('Gemini API returned an unexpected structure:', result);
                     }
                 } catch (error) {
-                    interpretationError.textContent = `AI ¸ÑÅª¥¢±Ñ¡G${error.message}¡C½ĞÀË¬dºô¸ô³s½u©Î API ª¬ºA¡C`;
+                    interpretationError.textContent = `AI è§£è®€å¤±æ•—ï¼š${error.message}ã€‚è«‹æª¢æŸ¥ç¶²è·¯é€£ç·šæˆ– API ç‹€æ…‹ã€‚`;
                     interpretationError.classList.remove('hidden');
                     console.error('Error calling Gemini API:', error);
                 } finally {
@@ -570,7 +570,7 @@ TP3,18.0,12.0"></textarea>
             function applyTransformationToPoints() {
                 transformApplyError.classList.add('hidden');
                 if (!globalCalculatedParams) {
-                    transformApplyError.textContent = "¿ù»~¡G½Ğ¥ı­pºâÂà´«°Ñ¼Æ¡C";
+                    transformApplyError.textContent = "éŒ¯èª¤ï¼šè«‹å…ˆè¨ˆç®—è½‰æ›åƒæ•¸ã€‚";
                     transformApplyError.classList.remove('hidden');
                     return;
                 }
@@ -582,7 +582,7 @@ TP3,18.0,12.0"></textarea>
                 transformedPointsTableBody.innerHTML = '';
 
                 if (globalPointsToTransform.length === 0) {
-                     transformedPointsTableBody.innerHTML = '<tr class="text-slate-500"><td colspan="5" class="p-2 text-center">¨S¦³«İÂà´«ÂI¼Æ¾Ú</td></tr>';
+                     transformedPointsTableBody.innerHTML = '<tr class="text-slate-500"><td colspan="5" class="p-2 text-center">æ²’æœ‰å¾…è½‰æ›é»æ•¸æ“š</td></tr>';
                      updateChart();
                      return;
                 }
@@ -612,7 +612,7 @@ TP3,18.0,12.0"></textarea>
                     data: {
                         datasets: [
                             {
-                                label: '­ì©l±±¨îÂI',
+                                label: 'åŸå§‹æ§åˆ¶é»',
                                 data: [],
                                 backgroundColor: 'rgba(59, 130, 246, 0.7)', // blue-500
                                 borderColor: 'rgb(59, 130, 246)',
@@ -621,7 +621,7 @@ TP3,18.0,12.0"></textarea>
                                 pointStyle: 'circle'
                             },
                             {
-                                label: 'Âà´««á±±¨îÂI',
+                                label: 'è½‰æ›å¾Œæ§åˆ¶é»',
                                 data: [],
                                 backgroundColor: 'rgba(239, 68, 68, 0.7)', // red-500
                                 borderColor: 'rgb(239, 68, 68)',
@@ -630,7 +630,7 @@ TP3,18.0,12.0"></textarea>
                                 pointStyle: 'triangle'
                             },
                             {
-                                label: '­ì©l«İÂà´«ÂI',
+                                label: 'åŸå§‹å¾…è½‰æ›é»',
                                 data: [],
                                 backgroundColor: 'rgba(16, 185, 129, 0.7)', // emerald-500
                                 borderColor: 'rgb(16, 185, 129)',
@@ -639,7 +639,7 @@ TP3,18.0,12.0"></textarea>
                                 pointStyle: 'rect'
                             },
                             {
-                                label: 'Âà´««á«İÂà´«ÂI',
+                                label: 'è½‰æ›å¾Œå¾…è½‰æ›é»',
                                 data: [],
                                 backgroundColor: 'rgba(124, 58, 237, 0.7)', // purple-500
                                 borderColor: 'rgb(124, 58, 237)',
@@ -656,13 +656,13 @@ TP3,18.0,12.0"></textarea>
                             x: {
                                 type: 'linear',
                                 position: 'bottom',
-                                title: { display: true, text: 'E ®y¼Ğ', color: '#475569', font: { family: "'Inter', 'Noto Sans TC', sans-serif" } }, // E on X-axis for plotting
+                                title: { display: true, text: 'E åº§æ¨™', color: '#475569', font: { family: "'Inter', 'Noto Sans TC', sans-serif" } }, // E on X-axis for plotting
                                 grid: { color: 'rgba(0,0,0,0.05)' },
                                 ticks: { color: '#475569', font: { family: "'Inter', 'Noto Sans TC', sans-serif" } }
                             },
                             y: {
                                 type: 'linear',
-                                title: { display: true, text: 'N ®y¼Ğ', color: '#475569', font: { family: "'Inter', 'Noto Sans TC', sans-serif" } }, // N on Y-axis for plotting
+                                title: { display: true, text: 'N åº§æ¨™', color: '#475569', font: { family: "'Inter', 'Noto Sans TC', sans-serif" } }, // N on Y-axis for plotting
                                 grid: { color: 'rgba(0,0,0,0.05)' },
                                 ticks: { color: '#475569', font: { family: "'Inter', 'Noto Sans TC', sans-serif" } }
                             }
@@ -684,9 +684,9 @@ TP3,18.0,12.0"></textarea>
                                         }
                                         const index = context.dataIndex;
                                         let pointId = '';
-                                        if ((context.dataset.label === '­ì©l±±¨îÂI' || context.dataset.label === 'Âà´««á±±¨îÂI') && globalControlPoints[index]) {
+                                        if ((context.dataset.label === 'åŸå§‹æ§åˆ¶é»' || context.dataset.label === 'è½‰æ›å¾Œæ§åˆ¶é»') && globalControlPoints[index]) {
                                             pointId = `ID: ${globalControlPoints[index].id}`;
-                                        } else if ((context.dataset.label === '­ì©l«İÂà´«ÂI' || context.dataset.label === 'Âà´««á«İÂà´«ÂI') && globalPointsToTransform[index]) {
+                                        } else if ((context.dataset.label === 'åŸå§‹å¾…è½‰æ›é»' || context.dataset.label === 'è½‰æ›å¾Œå¾…è½‰æ›é»') && globalPointsToTransform[index]) {
                                             pointId = `ID: ${globalPointsToTransform[index].id}`;
                                         }
                                         return [label, pointId].filter(Boolean);
